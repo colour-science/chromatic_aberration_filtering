@@ -1,59 +1,91 @@
 
 # Blind Chromatic Aberration Correction with False Color Filtering
 
-| <img src="/images/teaser_blurry.png" width="230px"/> | <img src="images/teaser_restored.png" width="230px"/> |
-|:----------------------------------------------------:|:-----------------------------------------------------:|
-|                <i>Aberrated image</i>                |                <i>Filtered result</i>                 |
+| <img src="https://raw.githubusercontent.com/colour-science/chromatic_aberration_filtering/feature/wheels/images/teaser_blurry.png" width="230px"/> | <img src="https://raw.githubusercontent.com/colour-science/chromatic_aberration_filtering/feature/wheels/images/teaser_restored.png" width="230px"/> |
+|:--------------------------------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------:|
+|                                                               <i>Aberrated image</i>                                                               |                                                                <i>Filtered result</i>                                                                |
 
+This repository contains a non-official [Cython](https://cython.org) implementation of the IEEE Transactions on Image Processing 2013 article [Correction of Axial and Lateral Chromatic Aberration With False Color Filter](https://ieeexplore.ieee.org/document/6357254) by Joonyoung Chang, Hee Kang and Moon Gi Kang.
 
-This is a repository containing a non-official Cython-based implementation of the IEEE Transactions on Image
-Processing 2013 article *Correction of Axial and Lateral Chromatic Aberration With False Color Filter* by
-Joonyoung Chang, Hee Kang and Moon Gi Kang.
+The method consists in a 1D filter independently run on the columns and rows of an image containing chromatic aberrations. Merging the horizontally and vertically filtered outputs yields the final restored image. Our implementation leverages the multi-threading abilities of Cython to achieve restoration on large images in less than 1 second.
 
-The method consists in a 1D filter independently run on the columns and rows of an image containing chromatic 
-aberrations. Merging the horizontally and vertically filtered outputs yields the final restored image. Our
-implementation leverages the multi-threading abilities of Cython to achieve restoration on large images in less
-than 1 second.
+This implementation is part of an [IPOL](https://www.ipol.im) paper describing in the detail the method. If this code is useful to your research, please cite our paper [paper](https://www.ipol.im/pub/art/2023/443/article.pdf).
 
-This implementation is part of an IPOL paper describing in the detail the method. If this code is useful to your 
-research please cite our paper [paper (to appear)]<a href="https://ipolcore.ipol.im/demo/clientApp/demo.html?id=443">[demo]</a>
+## News
 
-### News
+10/19: Try the [online demo](https://ipolcore.ipol.im/demo/clientApp/demo.html?id=443) using the code!
 
-10/19: Try the <a href="https://ipolcore.ipol.im/demo/clientApp/demo.html?id=443">online demo</a> using this code!
+## Requirements
 
-### Testing the code
+### macOS
 
-You can test the code with a test JPEG image containing chromatic aberrations. First, compile Cython code 
-and install the python package with
-> bash compile_cython.sh
+To benefit from parallelism, [OpenMP](https://openmp.llvm.org) needs to be installed alongside [LLVM](https://llvm.org).
 
+Assuming [Homebrew](https://brew.sh) is available, their installation is as follows:
+ 
+```bash
+brew install libomp llvm
+```
 
-This will create in the *chromatic_aberration_filtering* directory a filter_cython.c file. The file is already shipped with this code. If you do not want
-to run cython, simply set to False the *USE_CYTHON* argument in setup.py. Second, you can restore the image with the command line:
-> python main.py
+The following [Poetry](https://python-poetry.org) command can be used to install the remaining build requirements:
 
-This will save a 8-bit PNG file containing the restored image. The method can be also used on 16-bit TIFF images
-or straight after demosaicking/denoising in a typical ISP pipeline.
+```bash
+poetry install
+```
 
-### Requirements
+## Configuring
 
-Please run the pip install command below to install the requirements:
-> pip install requirements.txt
+[Meson](https://mesonbuild.com/) is used to build the Cython extension, the project can be configured as follows:
 
-### Description
+```bash
+poetry run meson build
+```
 
-The code contains two main modules: filter.py that is a numpy-pure implemention of the paper (and is extremely slow),
-and filter_cython.pyx that contains the sources for the Cython implementation (recommanded).
+## Building an Editable Build
 
-After installation/compilation, you can import in any project this code by importing the package
-> import chromatic_aberration_filtering
+### macOS
 
-The actual function is
-> chromatic_aberration_filtering.chromatic_removal
+```bash
+CC=$(brew --prefix llvm)/bin/clang poetry run pip install --no-build-isolation --editable .
+```
 
-Please refer to main.py to see an example of use.
+The **Cython** extension will be installed in the **Poetry** virtual environement and available for import.
 
-### Contact 
+## Building a Wheel
 
-If you encounter any problem with the code, please contact me at <thomas.eboli@ens-paris-saclay.fr>.
+### macOS
+
+```bash
+CC=$(brew --prefix llvm)/bin/clang poetry run python -m build
+```
+
+The **wheel** will be available in the `dist` directory.
+
+## Usage
+
+The **Cython** extension can be imported as follows:
+
+```python
+import chromatic_aberration_correction
+```
+
+Then the function to correct chromatic aberration is available to use:
+
+```python
+chromatic_aberration_correction.correct_chromatic_aberration
+```
+
+Examples are available in the examples directory: [examples/example_correction.py](examples/example_correction.py)
+
+Note that on macOS, for best performance, it is recommended to set the number of *OpenMP* threads to 1:
+
+```bash
+export OMP_NUM_THREADS=1
+```
+
+## Contact 
+
+If you encounter any problem with the code, please use the following contacts:
+
+- <thomas.eboli@ens-paris-saclay.fr>
+- <colour-developers@colour-science.org>

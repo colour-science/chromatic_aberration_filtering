@@ -1,0 +1,155 @@
+name: Build
+
+on: [ push, pull_request ]
+
+jobs:
+  linux-x86_64:
+    name: Build Wheels on Linux (x86_64)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - build: Python 3.10 x86_64
+            python: cp310-manylinux_x86_64
+            arch: x86_64
+          - build: Python 3.11 x86_64
+            python: cp311-manylinux_x86_64
+            arch: x86_64
+          - build: Python 3.12 x86_64
+            python: cp312-manylinux_x86_64
+            arch: x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==2.20.0
+      - name: Build Wheel
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: ${{ matrix.python }}
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux }}
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_TEST_COMMAND: 'pip install "numpy>= 1.24, <2" && time python -c "import numpy as np;from chromatic_aberration_correction import correct_chromatic_aberration;RGB = np.random.random([2160, 3840, 3]).astype(np.float32);correct_chromatic_aberration(RGB, 4, 4, np.array([-0.25, 1.375, -0.125], np.float32), 15.0 / 255, 0.5, 1.0, 1.0, 0.25, 128.0 / 255, 64.0 / 255)"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.python }}
+          path: ./wheelhouse/*.whl
+
+  linux-arm64:
+    name: Build Wheels on Linux (ARM64)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - build: Python 3.10 ARM64
+            python: cp310-manylinux_aarch64
+            arch: aarch64
+          - build: Python 3.11 ARM64
+            python: cp311-manylinux_aarch64
+            arch: aarch64
+          - build: Python 3.12 ARM64
+            python: cp312-manylinux_aarch64
+            arch: aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==2.20.0
+      - name: Build Wheel
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: ${{ matrix.python }}
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux }}
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_TEST_COMMAND: 'pip install "numpy>= 1.24, <2" && time python -c "import numpy as np;from chromatic_aberration_correction import correct_chromatic_aberration;RGB = np.random.random([2160, 3840, 3]).astype(np.float32);correct_chromatic_aberration(RGB, 4, 4, np.array([-0.25, 1.375, -0.125], np.float32), 15.0 / 255, 0.5, 1.0, 1.0, 0.25, 128.0 / 255, 64.0 / 255)"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.python }}
+          path: ./wheelhouse/*.whl
+
+  macos-arm64:
+    name: Build Wheels on macOS (ARM64)
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        include:
+          - build: Python 3.10 ARM64
+            python: cp310-macosx_arm64
+            arch: arm64
+          - build: Python 3.11 ARM64
+            python: cp311-macosx_arm64
+            arch: arm64
+          - build: Python 3.12 ARM64
+            python: cp312-macosx_arm64
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install Dependencies
+        run: |
+          brew install libomp llvm
+      - name: Environment Variables
+        run: |
+          echo "MACOSX_DEPLOYMENT_TARGET=14.0" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==2.20.0
+      - name: Build Wheel
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: ${{ matrix.python }}
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_TEST_COMMAND: 'pip install "numpy>= 1.24, <2" && time python -c "import numpy as np;from chromatic_aberration_correction import correct_chromatic_aberration;RGB = np.random.random([2160, 3840, 3]).astype(np.float32);correct_chromatic_aberration(RGB, 4, 4, np.array([-0.25, 1.375, -0.125], np.float32), 15.0 / 255, 0.5, 1.0, 1.0, 0.25, 128.0 / 255, 64.0 / 255)"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.python }}
+          path: ./wheelhouse/*.whl
+
+  sdist:
+    name: Build Sdist
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+    - name: Install Package Dependencies
+      run: python -m pip install build twine
+    - name: Build Sdist
+      run: python -m build . --sdist
+    - name: Check Sdist
+      run: python -m twine check dist/*
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-sdist
+        path: dist/*.tar.gz
+
+  upload-pypi:
+    name: Upload to Pypi
+    needs: [linux-x86_64, linux-arm64, macos-arm64, sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/setup-python@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/

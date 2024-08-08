@@ -1,0 +1,60 @@
+[project]
+name = "chromatic_aberration_filtering"
+version = "0.1.0.dev2"
+description = "A Python implementation of Cheng et al. (2013) chromatic aberration correction algorithm."
+license = { file = 'LICENSE' }
+authors = [
+    { name = "Thomas Eboli", email = "thomas.eboli@ens-paris-saclay.fr" },
+]
+maintainers = [
+    { name = "Colour Developers", email = "`colour-developers@colour-science.org" },
+]
+readme = "README.md"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+requires-python = ">= 3.10, < 3.13"
+
+[tool.poetry]
+name = "chromatic_aberration_filtering"
+version = "0.1.0.dev2"
+description = "A Python implementation of Cheng et al. (2013) chromatic aberration correction algorithm."
+license = "MIT"
+authors = ["Thomas Eboli <thomas.eboli@ens-paris-saclay.fr>"]
+maintainers = ["Colour Developers <`colour-developers@colour-science.org>"]
+readme = "README.md"
+repository = "https://github.com/teboli/chromatic_aberration_filtering"
+keywords = ["python", "cython", "image-processing", "chromatic-aberration"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+[tool.poetry.dependencies]
+python = ">= 3.10, < 3.13"
+numpy = ">= 1.24, < 2"
+
+[tool.poetry.group.dev.dependencies]
+build = "*"
+cython = "*"
+matplotlib = "*"
+meson-python = "*"
+scikit-image = "*"
+
+[build-system]
+build-backend = "mesonpy"
+requires = ["meson-python", "cython", "numpy>= 1.24, < 2"]
